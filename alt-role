@@ -1,0 +1,400 @@
+-- ==========================================================
+-- PREMIUM ALT HUD - INTEGRATED SAFE BLACKOUT
+-- ==========================================================
+
+-- [HỆ THỐNG NGẦM 1: SỐ 2 - FINAL FLIGHT / RESET TIMER]
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local activeThread = nil
+
+local function executeFinalFlight()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then part.CanCollide = false end
+    end
+
+    local startTime = tick()
+    local connection
+    connection = RunService.RenderStepped:Connect(function()
+        if not hrp or not hrp.Parent then connection:Disconnect() return end
+        hrp.CFrame = hrp.CFrame + Vector3.new(100, -50, 0)
+        if tick() - startTime > 5 then
+            connection:Disconnect()
+        end
+    end)
+end
+
+local function startResetTimer()
+    if activeThread then task.cancel(activeThread) end
+    activeThread = task.spawn(function()
+        task.wait(12)
+        executeFinalFlight()
+    end)
+end
+
+LocalPlayer.CharacterAdded:Connect(startResetTimer)
+if LocalPlayer.Character then startResetTimer() end
+
+
+-- [HỆ THỐNG NGẦM 2: SỐ 3 - ANTI-AFK CHẠY TỰ ĐỘNG]
+task.spawn(function()
+    if getconnections then
+        for _, connection in pairs(getconnections(LocalPlayer.Idled)) do
+            if connection["Disable"] then
+                connection["Disable"](connection)
+            elseif connection["Disconnect"] then
+                connection["Disconnect"](connection)
+            end
+        end
+    else
+        LocalPlayer.Idled:Connect(function()
+            local VirtualUser = game:GetService("VirtualUser")
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
+    end
+end)
+
+
+-- [HỆ THỐNG GIAO DIỆN CHÍNH (SỐ 1 MỞ RỘNG)]
+task.spawn(function()
+    local THEME = {
+        Background = Color3.fromRGB(24, 24, 28),
+        Topbar = Color3.fromRGB(32, 32, 38),
+        TextPrimary = Color3.fromRGB(240, 240, 245),
+        TextSecondary = Color3.fromRGB(150, 150, 160),
+        ButtonActive = Color3.fromRGB(46, 204, 113),
+        ButtonInactive = Color3.fromRGB(231, 76, 60),
+        ButtonBlackOn = Color3.fromRGB(52, 73, 94),
+        ButtonBlackOff = Color3.fromRGB(40, 40, 45),
+        DropdownBg = Color3.fromRGB(38, 38, 44),
+        DropdownItem = Color3.fromRGB(48, 48, 56),
+        CloseButton = Color3.fromRGB(250, 80, 80)
+    }
+
+    local coreGui = game:GetService("CoreGui")
+    local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+    -- ScreenGui chính (Nằm trên CoreGui để không bị mất khi hồi sinh)
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Parent = coreGui
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.Name = "ModernKillFarmAlt"
+    ScreenGui.DisplayOrder = 999999
+
+    local MainFrame = Instance.new("Frame")
+    local MainCorner = Instance.new("UICorner")
+    
+    local Topbar = Instance.new("Frame")
+    local TopbarCorner = Instance.new("UICorner")
+    local Title = Instance.new("TextLabel")
+    local CloseButton = Instance.new("TextButton")
+    local CloseCorner = Instance.new("UICorner")
+
+    local DropdownButton = Instance.new("TextButton")
+    local DropdownCorner = Instance.new("UICorner")
+    local DropdownScroll = Instance.new("ScrollingFrame")
+    local DropdownScrollCorner = Instance.new("UICorner")
+    
+    local ToggleButton = Instance.new("TextButton")
+    local ButtonCorner = Instance.new("UICorner")
+
+    local BlackScreenButton = Instance.new("TextButton")
+    local BlackButtonCorner = Instance.new("UICorner")
+
+    -- Khung Menu Chính (Tăng chiều cao lên 260 để chứa đủ các nút hiện đại)
+    MainFrame.Name = "MainFrame"
+    MainFrame.Parent = ScreenGui
+    MainFrame.BackgroundColor3 = THEME.Background
+    MainFrame.Position = UDim2.new(0.05, 0, 0.3, 0)
+    MainFrame.Size = UDim2.new(0, 220, 0, 260)
+    MainFrame.Active = true
+    MainFrame.Draggable = true 
+
+    MainCorner.CornerRadius = UDim.new(0, 8)
+    MainCorner.Parent = MainFrame
+
+    -- Thanh Topbar
+    Topbar.Name = "Topbar"
+    Topbar.Parent = MainFrame
+    Topbar.BackgroundColor3 = THEME.Topbar
+    Topbar.Size = UDim2.new(1, 0, 0, 35)
+    
+    TopbarCorner.CornerRadius = UDim.new(0, 8)
+    TopbarCorner.Parent = Topbar
+
+    Title.Parent = Topbar
+    Title.BackgroundTransparency = 1
+    Title.Position = UDim2.new(0, 12, 0, 0)
+    Title.Size = UDim2.new(1, -45, 1, 0)
+    Title.Text = "Kill Farm Alt"
+    Title.TextColor3 = THEME.TextPrimary
+    Title.TextSize = 14
+    Title.Font = Enum.Font.GothamBold
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+
+    CloseButton.Parent = Topbar
+    CloseButton.Position = UDim2.new(1, -28, 0.5, -10)
+    CloseButton.Size = UDim2.new(0, 20, 0, 20)
+    CloseButton.BackgroundColor3 = THEME.CloseButton
+    CloseButton.Text = "×"
+    CloseButton.TextColor3 = THEME.TextPrimary
+    CloseButton.TextSize = 16
+    CloseButton.Font = Enum.Font.GothamBold
+
+    CloseCorner.CornerRadius = UDim.new(1, 0)
+    CloseCorner.Parent = CloseButton
+
+    -- Nút Chọn Người Chơi (Dropdown Button)
+    DropdownButton.Parent = MainFrame
+    DropdownButton.Position = UDim2.new(0.05, 0, 0, 50)
+    DropdownButton.Size = UDim2.new(0.9, 0, 0, 35)
+    DropdownButton.BackgroundColor3 = THEME.DropdownBg
+    DropdownButton.Text = "🔍 SELECT PLAYER"
+    DropdownButton.TextColor3 = THEME.TextPrimary
+    DropdownButton.TextSize = 12
+    DropdownButton.Font = Enum.Font.GothamSemibold
+
+    DropdownCorner.CornerRadius = UDim.new(0, 6)
+    DropdownCorner.Parent = DropdownButton
+
+    -- Danh Sách Cuộn Người Chơi (Scrolling Frame)
+    DropdownScroll.Parent = MainFrame
+    DropdownScroll.Position = UDim2.new(0.05, 0, 0, 90)
+    DropdownScroll.Size = UDim2.new(0.9, 0, 0, 100)
+    DropdownScroll.BackgroundColor3 = THEME.DropdownBg
+    DropdownScroll.Visible = false
+    DropdownScroll.ZIndex = 5
+    DropdownScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    DropdownScroll.ScrollBarThickness = 4
+
+    DropdownScrollCorner.CornerRadius = UDim.new(0, 6)
+    DropdownScrollCorner.Parent = DropdownScroll
+
+    -- Nút Bật/Tắt Farm
+    ToggleButton.Parent = MainFrame
+    ToggleButton.Position = UDim2.new(0.05, 0, 0, 145)
+    ToggleButton.Size = UDim2.new(0.9, 0, 0, 45)
+    ToggleButton.BackgroundColor3 = THEME.ButtonInactive
+    ToggleButton.Text = "START FARM"
+    ToggleButton.TextColor3 = THEME.TextPrimary
+    ToggleButton.TextSize = 13
+    ToggleButton.Font = Enum.Font.GothamBold
+
+    ButtonCorner.CornerRadius = UDim.new(0, 6)
+    ButtonCorner.Parent = ToggleButton
+
+    -- Nút Màn Hình Đen (Black Screen Button)
+    BlackScreenButton.Name = "BlackScreenButton"
+    BlackScreenButton.Parent = MainFrame
+    BlackScreenButton.Position = UDim2.new(0.05, 0, 0, 205)
+    BlackScreenButton.Size = UDim2.new(0.9, 0, 0, 40)
+    BlackScreenButton.BackgroundColor3 = THEME.ButtonBlackOff
+    BlackScreenButton.Text = "🖥️ BLACK SCREEN: OFF"
+    BlackScreenButton.TextColor3 = THEME.TextSecondary
+    BlackScreenButton.TextSize = 12
+    BlackScreenButton.Font = Enum.Font.GothamBold
+
+    BlackButtonCorner.CornerRadius = UDim.new(0, 6)
+    BlackButtonCorner.Parent = BlackScreenButton
+
+    -- [HỆ THỐNG MÀN HÌNH ĐEN AN TOÀN]
+    -- Chui xuống đáy PlayerGui để không nuốt mất tiền và menu của game
+    local overlayGui = Instance.new("ScreenGui")
+    overlayGui.Name = "AltSafeBlackoutOverlay"
+    overlayGui.ResetOnSpawn = false
+    overlayGui.IgnoreGuiInset = true    
+    overlayGui.DisplayOrder = -9999     
+    overlayGui.Parent = playerGui
+
+    local blackoutFrame = Instance.new("Frame")
+    blackoutFrame.Size = UDim2.new(1, 0, 1, 0)
+    blackoutFrame.Position = UDim2.new(0, 0, 0, 0)
+    blackoutFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+    blackoutFrame.BackgroundTransparency = 0
+    blackoutFrame.ZIndex = -9999
+    blackoutFrame.Visible = false
+    blackoutFrame.Parent = overlayGui
+
+    -- LOGIC HOẠT ĐỘNG CHỨC NĂNG FARM
+    local farming = false
+    local targetPlayer = nil
+    local isBlackoutOn = false
+    local snapSpeed = 8.0     
+    local flySpeed = 35.0     
+    local upSpeed = 12.0      
+
+    CloseButton.MouseButton1Click:Connect(function()
+        farming = false
+        blackoutFrame.Visible = false
+        local char = LocalPlayer.Character
+        local head = char and char:FindFirstChild("Head")
+        if head then pcall(function() head:Destroy() end) end
+        ScreenGui:Destroy()
+        overlayGui:Destroy()
+    end)
+
+    local function updateDropdown()
+        for _, child in ipairs(DropdownScroll:GetChildren()) do
+            if child:IsA("TextButton") then child:Destroy() end
+        end
+        
+        local count = 0
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                count = count + 1
+                local pBtn = Instance.new("TextButton")
+                pBtn.Parent = DropdownScroll
+                pBtn.Size = UDim2.new(1, 0, 0, 25)
+                pBtn.Position = UDim2.new(0, 0, 0, (count - 1) * 25)
+                pBtn.BackgroundColor3 = THEME.DropdownItem
+                pBtn.Text = player.DisplayName .. " (@" .. player.Name .. ")"
+                pBtn.TextColor3 = THEME.TextPrimary
+                pBtn.TextSize = 11
+                pBtn.Font = Enum.Font.Gotham
+                pBtn.ZIndex = 6
+                
+                local pBtnCorner = Instance.new("UICorner")
+                pBtnCorner.CornerRadius = UDim.new(0, 4)
+                pBtnCorner.Parent = pBtn
+                
+                pBtn.MouseButton1Click:Connect(function()
+                    targetPlayer = player
+                    DropdownButton.Text = "🎯 " .. player.Name
+                    DropdownScroll.Visible = false
+                end)
+            end
+        end
+        DropdownScroll.CanvasSize = UDim2.new(0, 0, 0, count * 25)
+    end
+
+    DropdownButton.MouseButton1Click:Connect(function()
+        DropdownScroll.Visible = not DropdownScroll.Visible
+        if DropdownScroll.Visible then
+            updateDropdown()
+        end
+    end)
+
+    local function startCFlyLock()
+        while farming do
+            task.wait(0.1)
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            
+            if hrp and hum and targetPlayer and targetPlayer.Character then
+                local targetHrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if targetHrp then
+                    hum.Health = 1
+                    
+                    local targetHeight = hrp.Position.Y + 805
+                    while farming and hrp and targetPlayer.Character and hrp.Position.Y < targetHeight do
+                        if hum.Health ~= 1 then hum.Health = 1 end
+                        hrp.CFrame = hrp.CFrame + Vector3.new(0, upSpeed, 0)
+                        hrp.Velocity = Vector3.new(0, 0, 0)
+                        RunService.Heartbeat:Wait()
+                    end
+                    
+                    while farming and targetPlayer.Character and targetHrp do
+                        if hum.Health ~= 1 then hum.Health = 1 end
+                        local targetTopPos = Vector3.new(targetHrp.Position.X, hrp.Position.Y, targetHrp.Position.Z)
+                        local dist = (Vector3.new(hrp.Position.X, hrp.Position.Y, hrp.Position.Z) - targetTopPos).Magnitude
+                        
+                        if dist > 6 then
+                            local dir = (targetTopPos - hrp.Position).Unit
+                            hrp.CFrame = CFrame.new(hrp.Position + (dir * math.min(flySpeed, dist)))
+                        else
+                            break 
+                        end
+                        hrp.Velocity = Vector3.new(0, 0, 0)
+                        RunService.Heartbeat:Wait()
+                    end
+                    
+                    local deadStateActivated = false 
+                    while farming and targetPlayer.Character and targetHrp do
+                        local torsoCFrame = targetHrp.CFrame * CFrame.new(0, 0, -3.5)
+                        local distance = (hrp.Position - torsoCFrame.Position).Magnitude
+                        
+                        if distance > 2.0 then
+                            local direction = (torsoCFrame.Position - hrp.Position).Unit
+                            hrp.CFrame = CFrame.new(hrp.Position + (direction * math.min(snapSpeed, distance)), targetHrp.Position)
+                        else
+                            hrp.CFrame = CFrame.new(torsoCFrame.Position, targetHrp.Position) * CFrame.Angles(0, math.rad(180), 0)
+                            if not deadStateActivated and char and char:FindFirstChild("Humanoid") then
+                                deadStateActivated = true
+                                char.Humanoid:ChangeState(Enum.HumanoidStateType.Dead)
+                            end
+                        end
+                        hrp.Velocity = Vector3.new(0, 0, 0)
+                        RunService.Heartbeat:Wait()
+                    end
+                end
+            end
+        end
+    end
+
+    ToggleButton.MouseButton1Click:Connect(function()
+        if farming then
+            farming = false
+            ToggleButton.Text = "START FARM"
+            ToggleButton.BackgroundColor3 = THEME.ButtonInactive
+            targetPlayer = nil
+            DropdownButton.Text = "🔍 SELECT PLAYER"
+        else
+            if targetPlayer then
+                farming = true
+                ToggleButton.Text = "STOP FARM"
+                ToggleButton.BackgroundColor3 = THEME.ButtonActive
+                DropdownScroll.Visible = false
+                task.spawn(startCFlyLock)
+            else
+                ToggleButton.Text = "⚠️ PLAYER NOT SELECTED!"
+                task.wait(1)
+                if not farming then ToggleButton.Text = "START FARM" end
+            end
+        end
+    end)
+
+    -- Logic Bật/Tắt Màn hình đen
+    BlackScreenButton.MouseButton1Click:Connect(function()
+        isBlackoutOn = not isBlackoutOn
+        if isBlackoutOn then
+            blackoutFrame.Visible = true
+            BlackScreenButton.Text = "🖥️ BLACK SCREEN: ON"
+            BlackScreenButton.BackgroundColor3 = THEME.ButtonBlackOn
+            BlackScreenButton.TextColor3 = THEME.TextPrimary
+        else
+            blackoutFrame.Visible = false
+            BlackScreenButton.Text = "🖥️ BLACK SCREEN: OFF"
+            BlackScreenButton.BackgroundColor3 = THEME.ButtonBlackOff
+            BlackScreenButton.TextColor3 = THEME.TextSecondary
+        end
+    end)
+
+    -- Tự động gắn lại màn hình đen vào PlayerGui mới mỗi khi hồi sinh
+    LocalPlayer.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        local newPlayerGui = LocalPlayer:FindFirstChild("PlayerGui")
+        if newPlayerGui and overlayGui then
+            overlayGui.Parent = newPlayerGui
+        end
+        if farming and targetPlayer then
+            task.spawn(startCFlyLock)
+        end
+    end)
+
+    Players.PlayerRemoving:Connect(function(player)
+        if targetPlayer == player then
+            farming = false
+            ToggleButton.Text = "START FARM"
+            ToggleButton.BackgroundColor3 = THEME.ButtonInactive
+            targetPlayer = nil
+            DropdownButton.Text = "🔍 SELECT PLAYER"
+        end
+    end)
+end)
+ 
