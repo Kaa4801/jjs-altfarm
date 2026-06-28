@@ -1,0 +1,276 @@
+-- ==========================================================
+-- PREMIUM CLEAN HUD - STEALTH DISTANCE FARMER (SAFE & HIDDEN)
+-- ==========================================================
+
+_G.CanAttack = false
+
+-- [HỆ THỐNG NGẦM 1: KHỞI CHẠY AUTO ATTACK CÓ ĐIỀU KIỆN]
+task.spawn(function()
+    local VIM = game:GetService("VirtualInputManager")
+    while true do
+        if _G.CanAttack then
+            VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+            task.wait(0.1)
+            VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+            task.wait(0.1)
+        else
+            task.wait(0.3)
+        end
+    end
+end)
+
+-- [HỆ THỐNG NGẦM 2: KHỞI CHẠY ANTI-AFK LUÔN LUÔN BẬT]
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    
+    if getconnections then
+        for _, connection in pairs(getconnections(LocalPlayer.Idled)) do
+            if connection["Disable"] then
+                connection["Disable"](connection)
+            elseif connection["Disconnect"] then
+                connection["Disconnect"](connection)
+            end
+        end
+    else
+        LocalPlayer.Idled:Connect(function()
+            local VirtualUser = game:GetService("VirtualUser")
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
+    end
+end)
+
+-- [GIAO DIỆN CHÍNH & LOGIC FARMER]
+task.spawn(function()
+    local THEME = {
+        Background = Color3.fromRGB(24, 24, 28),
+        Topbar = Color3.fromRGB(32, 32, 38),
+        TextPrimary = Color3.fromRGB(240, 240, 245),
+        TextSecondary = Color3.fromRGB(150, 150, 160),
+        ButtonActive = Color3.fromRGB(46, 204, 113),
+        ButtonInactive = Color3.fromRGB(231, 76, 60),
+        CloseButton = Color3.fromRGB(250, 80, 80)
+    }
+
+    local ScreenGui = Instance.new("ScreenGui")
+    local MainFrame = Instance.new("Frame")
+    local MainCorner = Instance.new("UICorner")
+    
+    local Topbar = Instance.new("Frame")
+    local TopbarCorner = Instance.new("UICorner")
+    local Title = Instance.new("TextLabel")
+    local CloseButton = Instance.new("TextButton")
+    local CloseCorner = Instance.new("UICorner")
+
+    local StatusLabel = Instance.new("TextLabel")
+    local ToggleButton = Instance.new("TextButton")
+    local ButtonCorner = Instance.new("UICorner")
+
+    ScreenGui.Parent = game:GetService("CoreGui")
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.Name = "ModernKillerFarm"
+
+    MainFrame.Name = "MainFrame"
+    MainFrame.Parent = ScreenGui
+    MainFrame.BackgroundColor3 = THEME.Background
+    MainFrame.Position = UDim2.new(0.05, 0, 0.5, -80)
+    MainFrame.Size = UDim2.new(0, 220, 0, 160)
+    MainFrame.Active = true
+    MainFrame.Draggable = true 
+
+    MainCorner.CornerRadius = UDim.new(0, 8)
+    MainCorner.Parent = MainFrame
+
+    Topbar.Name = "Topbar"
+    Topbar.Parent = MainFrame
+    Topbar.BackgroundColor3 = THEME.Topbar
+    Topbar.Size = UDim2.new(1, 0, 0, 35)
+    
+    TopbarCorner.CornerRadius = UDim.new(0, 8)
+    TopbarCorner.Parent = Topbar
+
+    Title.Parent = Topbar
+    Title.BackgroundTransparency = 1
+    Title.Position = UDim2.new(0, 12, 0, 0)
+    Title.Size = UDim2.new(1, -45, 1, 0)
+    Title.Text = "Killer Farm Premium"
+    Title.TextColor3 = THEME.TextPrimary
+    Title.TextSize = 14
+    Title.Font = Enum.Font.GothamBold
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+
+    CloseButton.Parent = Topbar
+    CloseButton.Position = UDim2.new(1, -28, 0.5, -10)
+    CloseButton.Size = UDim2.new(0, 20, 0, 20)
+    CloseButton.BackgroundColor3 = THEME.CloseButton
+    CloseButton.Text = "×"
+    CloseButton.TextColor3 = THEME.TextPrimary
+    CloseButton.TextSize = 16
+    CloseButton.Font = Enum.Font.GothamBold
+
+    CloseCorner.CornerRadius = UDim.new(1, 0)
+    CloseCorner.Parent = CloseButton
+
+    StatusLabel.Parent = MainFrame
+    StatusLabel.BackgroundTransparency = 1
+    StatusLabel.Position = UDim2.new(0, 0, 0, 45)
+    StatusLabel.Size = UDim2.new(1, 0, 0, 20)
+    StatusLabel.Text = "💤 System: Idle"
+    StatusLabel.TextColor3 = THEME.TextSecondary
+    StatusLabel.TextSize = 11
+    StatusLabel.Font = Enum.Font.GothamSemibold
+
+    ToggleButton.Parent = MainFrame
+    ToggleButton.Position = UDim2.new(0.05, 0, 0, 80)
+    ToggleButton.Size = UDim2.new(0.9, 0, 0, 45)
+    ToggleButton.BackgroundColor3 = THEME.ButtonInactive
+    ToggleButton.Text = "START FARMING"
+    ToggleButton.TextColor3 = THEME.TextPrimary
+    ToggleButton.TextSize = 13
+    ToggleButton.Font = Enum.Font.GothamBold
+
+    ButtonCorner.CornerRadius = UDim.new(0, 6)
+    ButtonCorner.Parent = ToggleButton
+
+    -- LOGIC HOẠT ĐỘNG CHỨC NĂNG FARM
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local RunService = game:GetService("RunService")
+    local Workspace = game:GetService("Workspace")
+
+    local farming = false
+    local flySpeed = 35.0     -- Tốc độ an toàn chống anti-cheat
+    local upSpeed = 12.0      
+    
+    -- TỌA ĐỘ ĐÍCH: Đẩy xa tầm nhìn map (Mức 75% khoảng cách gốc để ẩn danh hoàn toàn)
+    local targetCoords = Vector3.new(0.45, 137.33, 1120.00) 
+    
+    local floatForce = nil
+    local floatPlatform = nil
+
+    local function cleanupSafety()
+        if floatForce then pcall(function() floatForce:Destroy() end) floatForce = nil end
+        if floatPlatform then pcall(function() floatPlatform:Destroy() end) floatPlatform = nil end
+    end
+
+    CloseButton.MouseButton1Click:Connect(function()
+        farming = false
+        _G.CanAttack = false
+        cleanupSafety()
+        ScreenGui:Destroy()
+    end)
+
+    local function startKillerFlight()
+        while farming do
+            task.wait(0.1)
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            
+            if hrp and hum then
+                cleanupSafety()
+                _G.CanAttack = false
+                StatusLabel.Text = "⏳ Moving: Stealth Tween"
+                StatusLabel.TextColor3 = Color3.fromRGB(241, 196, 15)
+                
+                -- PHASE 1: Cất cánh thẳng đứng
+                local targetHeight = hrp.Position.Y + 350
+                while farming and hrp do
+                    hrp.CFrame = hrp.CFrame + Vector3.new(0, upSpeed, 0)
+                    hrp.Velocity = Vector3.new(0, 0, 0)
+                    RunService.Heartbeat:Wait()
+                    if hrp.Position.Y >= targetHeight then break end
+                end
+                
+                -- PHASE 2: Bay ngang ra vùng ẩn danh
+                while farming and hrp do
+                    local targetTopPos = Vector3.new(targetCoords.X, hrp.Position.Y, targetCoords.Z)
+                    local dist = (Vector3.new(hrp.Position.X, hrp.Position.Y, hrp.Position.Z) - targetTopPos).Magnitude
+                    
+                    if dist > 6 then
+                        local dir = (targetTopPos - hrp.Position).Unit
+                        hrp.CFrame = CFrame.new(hrp.Position + (dir * math.min(flySpeed, dist)))
+                    else
+                        break 
+                    end
+                    hrp.Velocity = Vector3.new(0, 0, 0)
+                    RunService.Heartbeat:Wait()
+                end
+                
+                -- PHASE 3: Hạ cánh an toàn xuống điểm đứng farm ẩn
+                while farming and hrp do
+                    local dist = (hrp.Position - targetCoords).Magnitude
+                    if dist > 2 then
+                        local dir = (targetCoords - hrp.Position).Unit
+                        hrp.CFrame = CFrame.new(hrp.Position + (dir * math.min(8.0, dist)))
+                    else
+                        hrp.CFrame = CFrame.new(targetCoords)
+                        break
+                    end
+                    hrp.Velocity = Vector3.new(0, 0, 0)
+                    RunService.Heartbeat:Wait()
+                end
+                
+                cleanupSafety()
+                
+                if farming then
+                    _G.CanAttack = true
+                    StatusLabel.Text = "⚔️ Farming: Attack Active"
+                    StatusLabel.TextColor3 = Color3.fromRGB(46, 204, 113)
+                end
+                
+                floatForce = Instance.new("BodyVelocity")
+                floatForce.Name = "EldarInfiniteFloat"
+                floatForce.Velocity = Vector3.new(0, 0, 0)
+                floatForce.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                floatForce.Parent = hrp
+                
+                floatPlatform = Instance.new("Part")
+                floatPlatform.Name = "EldarFloatPlatform"
+                floatPlatform.Size = Vector3.new(15, 1, 15)
+                floatPlatform.Position = targetCoords - Vector3.new(0, 3.5, 0)
+                floatPlatform.Transparency = 1
+                floatPlatform.Anchored = true
+                floatPlatform.CanCollide = true
+                floatPlatform.Parent = Workspace
+                
+                while farming and char and char:Parent() and hrp do
+                    hrp.CFrame = CFrame.new(targetCoords)
+                    if floatForce and floatForce.Parent ~= hrp then floatForce.Parent = hrp end
+                    if floatPlatform then
+                        floatPlatform.Position = targetCoords - Vector3.new(0, 3.5, 0)
+                        floatPlatform.CanCollide = true
+                    end
+                    RunService.Heartbeat:Wait()
+                end
+                cleanupSafety()
+            end
+        end
+    end
+
+    -- Toggle Button Listener
+    ToggleButton.MouseButton1Click:Connect(function()
+        farming = not farming
+        if not farming then
+            _G.CanAttack = false
+            cleanupSafety()
+            ToggleButton.Text = "START FARMING"
+            ToggleButton.BackgroundColor3 = THEME.ButtonInactive
+            StatusLabel.Text = "💤 System: Idle"
+            StatusLabel.TextColor3 = THEME.TextSecondary
+        else
+            ToggleButton.Text = "STOP FARMING"
+            ToggleButton.BackgroundColor3 = THEME.ButtonActive
+            task.spawn(startKillerFlight)
+        end
+    end)
+
+    LocalPlayer.CharacterAdded:Connect(function()
+        if farming then
+            task.wait(0.5)
+            task.spawn(startKillerFlight)
+        end
+    end)
+end)
+ 
