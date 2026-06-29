@@ -1,5 +1,5 @@
 -- ==========================================================
--- PREMIUM ALT HUD - INTEGRATED SAFE BLACKOUT
+-- PREMIUM ALT HUD - INTEGRATED SAFE BLACKOUT (NO STAGE 2)
 -- ==========================================================
 
 -- [HỆ THỐNG NGẦM 1: SỐ 2 - FINAL FLIGHT / RESET TIMER]
@@ -79,7 +79,7 @@ task.spawn(function()
     local coreGui = game:GetService("CoreGui")
     local playerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-    -- ScreenGui chính (Nằm trên CoreGui để không bị mất khi hồi sinh)
+    -- ScreenGui chính
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Parent = coreGui
     ScreenGui.ResetOnSpawn = false
@@ -106,7 +106,7 @@ task.spawn(function()
     local BlackScreenButton = Instance.new("TextButton")
     local BlackButtonCorner = Instance.new("UICorner")
 
-    -- Khung Menu Chính (Tăng chiều cao lên 260 để chứa đủ các nút hiện đại)
+    -- Khung Menu Chính
     MainFrame.Name = "MainFrame"
     MainFrame.Parent = ScreenGui
     MainFrame.BackgroundColor3 = THEME.Background
@@ -149,7 +149,7 @@ task.spawn(function()
     CloseCorner.CornerRadius = UDim.new(1, 0)
     CloseCorner.Parent = CloseButton
 
-    -- Nút Chọn Người Chơi (Dropdown Button)
+    -- Nút Chọn Người Chơi
     DropdownButton.Parent = MainFrame
     DropdownButton.Position = UDim2.new(0.05, 0, 0, 50)
     DropdownButton.Size = UDim2.new(0.9, 0, 0, 35)
@@ -162,7 +162,7 @@ task.spawn(function()
     DropdownCorner.CornerRadius = UDim.new(0, 6)
     DropdownCorner.Parent = DropdownButton
 
-    -- Danh Sách Cuộn Người Chơi (Scrolling Frame)
+    -- Danh Sách Cuộn
     DropdownScroll.Parent = MainFrame
     DropdownScroll.Position = UDim2.new(0.05, 0, 0, 90)
     DropdownScroll.Size = UDim2.new(0.9, 0, 0, 100)
@@ -188,7 +188,7 @@ task.spawn(function()
     ButtonCorner.CornerRadius = UDim.new(0, 6)
     ButtonCorner.Parent = ToggleButton
 
-    -- Nút Màn Hình Đen (Black Screen Button)
+    -- Nút Màn Hình Đen
     BlackScreenButton.Name = "BlackScreenButton"
     BlackScreenButton.Parent = MainFrame
     BlackScreenButton.Position = UDim2.new(0.05, 0, 0, 205)
@@ -203,7 +203,6 @@ task.spawn(function()
     BlackButtonCorner.Parent = BlackScreenButton
 
     -- [HỆ THỐNG MÀN HÌNH ĐEN AN TOÀN]
-    -- Chui xuống đáy PlayerGui để không nuốt mất tiền và menu của game
     local overlayGui = Instance.new("ScreenGui")
     overlayGui.Name = "AltSafeBlackoutOverlay"
     overlayGui.ResetOnSpawn = false
@@ -225,7 +224,6 @@ task.spawn(function()
     local targetPlayer = nil
     local isBlackoutOn = false
     local snapSpeed = 8.0     
-    local flySpeed = 35.0     
     local upSpeed = 12.0      
 
     CloseButton.MouseButton1Click:Connect(function()
@@ -279,6 +277,7 @@ task.spawn(function()
         end
     end)
 
+    -- CHỈ CÒN 2 BƯỚC: BAY LÊN THẲNG TRÊN TRỜI -> LAO CHÉO XUỐNG BÁM LƯNG
     local function startCFlyLock()
         while farming do
             task.wait(0.1)
@@ -291,6 +290,7 @@ task.spawn(function()
                 if targetHrp then
                     hum.Health = 1
                     
+                    -- BƯỚC 1: Bay thẳng vút lên trời tạo độ cao an toàn
                     local targetHeight = hrp.Position.Y + 805
                     while farming and hrp and targetPlayer.Character and hrp.Position.Y < targetHeight do
                         if hum.Health ~= 1 then hum.Health = 1 end
@@ -299,21 +299,7 @@ task.spawn(function()
                         RunService.Heartbeat:Wait()
                     end
                     
-                    while farming and targetPlayer.Character and targetHrp do
-                        if hum.Health ~= 1 then hum.Health = 1 end
-                        local targetTopPos = Vector3.new(targetHrp.Position.X, hrp.Position.Y, targetHrp.Position.Z)
-                        local dist = (Vector3.new(hrp.Position.X, hrp.Position.Y, hrp.Position.Z) - targetTopPos).Magnitude
-                        
-                        if dist > 6 then
-                            local dir = (targetTopPos - hrp.Position).Unit
-                            hrp.CFrame = CFrame.new(hrp.Position + (dir * math.min(flySpeed, dist)))
-                        else
-                            break 
-                        end
-                        hrp.Velocity = Vector3.new(0, 0, 0)
-                        RunService.Heartbeat:Wait()
-                    end
-                    
+                    -- BƯỚC 2 (GỐC LÀ BƯỚC 3): Lao chéo từ trên trời thẳng vào sau lưng mục tiêu
                     local deadStateActivated = false 
                     while farming and targetPlayer.Character and targetHrp do
                         local torsoCFrame = targetHrp.CFrame * CFrame.new(0, 0, -3.5)
@@ -321,6 +307,7 @@ task.spawn(function()
                         
                         if distance > 2.0 then
                             local direction = (torsoCFrame.Position - hrp.Position).Unit
+                            -- Di chuyển chéo thẳng tới điểm bám lưng, mắt luôn khóa vào vị trí Killer
                             hrp.CFrame = CFrame.new(hrp.Position + (direction * math.min(snapSpeed, distance)), targetHrp.Position)
                         else
                             hrp.CFrame = CFrame.new(torsoCFrame.Position, targetHrp.Position) * CFrame.Angles(0, math.rad(180), 0)
