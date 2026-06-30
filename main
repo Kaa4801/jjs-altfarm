@@ -1,0 +1,75 @@
+-- ==========================================================
+-- UNIVERSAL GITHUB LOADER - CẬP NHẬT TRỰC TUYẾN
+-- ==========================================================
+
+local THEME = {
+    Background = Color3.fromRGB(24, 24, 28),
+    Topbar = Color3.fromRGB(32, 32, 38),
+    TextPrimary = Color3.fromRGB(240, 240, 245),
+    AccentKiller = Color3.fromRGB(192, 57, 43),
+    AccentAlt = Color3.fromRGB(41, 128, 185),
+    CloseButton = Color3.fromRGB(250, 80, 80)
+}
+
+-- Đường dẫn GitHub của bạn
+local GITHUB_KILLER = "https://raw.githubusercontent.com/Kaa4801/jjs-altfarm/refs/heads/main/killer-role"
+local GITHUB_ALT = "https://raw.githubusercontent.com/Kaa4801/jjs-altfarm/refs/heads/main/alt-role"
+
+-- Tạo giao diện chọn Role
+local LoaderGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+local MainHub = Instance.new("Frame", LoaderGui)
+MainHub.Size = UDim2.new(0, 280, 0, 150)
+MainHub.Position = UDim2.new(0.4, 0, 0.4, 0)
+MainHub.BackgroundColor3 = THEME.Background
+MainHub.Active = true MainHub.Draggable = true
+Instance.new("UICorner", MainHub).CornerRadius = UDim.new(0, 8)
+
+local Topbar = Instance.new("Frame", MainHub)
+Topbar.BackgroundColor3 = THEME.Topbar
+Topbar.Size = UDim2.new(1, 0, 0, 35)
+Instance.new("UICorner", Topbar).CornerRadius = UDim.new(0, 8)
+
+local Title = Instance.new("TextLabel", Topbar)
+Title.Text = "SELECT YOUR FARM ROLE"
+Title.Size = UDim2.new(1, 0, 1, 0)
+Title.BackgroundTransparency = 1
+Title.TextColor3 = THEME.TextPrimary
+Title.Font = Enum.Font.GothamBold
+
+local CloseHub = Instance.new("TextButton", Topbar)
+CloseHub.Size = UDim2.new(0, 20, 0, 20)
+CloseHub.Position = UDim2.new(1, -25, 0.5, -10)
+CloseHub.Text = "×"
+CloseHub.BackgroundColor3 = THEME.CloseButton
+Instance.new("UICorner", CloseHub).CornerRadius = UDim.new(1, 0)
+
+-- Nút bấm tải Role
+local function CreateButton(name, pos, color, url)
+    local btn = Instance.new("TextButton", MainHub)
+    btn.Size = UDim2.new(0.42, 0, 0, 65)
+    btn.Position = pos
+    btn.BackgroundColor3 = color
+    btn.Text = name
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    
+    btn.MouseButton1Click:Connect(function()
+        LoaderGui:Destroy() -- Xóa loader đi
+        
+        -- Gọi lệnh tải từ GitHub
+        local success, err = pcall(function()
+            loadstring(game:HttpGet(url))()
+        end)
+        
+        if not success then
+            warn("Lỗi khi tải script: " .. tostring(err))
+        end
+    end)
+end
+
+CreateButton("🩸\nKILLER ROLE", UDim2.new(0.06, 0, 0, 55), THEME.AccentKiller, GITHUB_KILLER)
+CreateButton("🛡️\nALT ROLE", UDim2.new(0.52, 0, 0, 55), THEME.AccentAlt, GITHUB_ALT)
+
+CloseHub.MouseButton1Click:Connect(function() LoaderGui:Destroy() end)
+ 
